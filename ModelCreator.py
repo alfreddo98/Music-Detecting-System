@@ -143,7 +143,7 @@ values, count = np.unique(np.argmax(y_test, axis=1), return_counts=True)
 plt.bar(values, count)
 plt.show()
 from tensorflow.keras.utils import Sequence
-# We will create the classto manupulate the data gathered so as to fit the model as wanted
+# We will create the class to manupulate the data gathered so as to fit the model as wanted
 class GTZANGenerator(Sequence):
     # Initialization
     def __init__(self, X, y, batch_size=64, is_test = False):
@@ -189,6 +189,8 @@ class GTZANGenerator(Sequence):
         return None
     """
 @description: Method that will help to create the model, it will create a convolutional layer that will be activated with the function ReLU, it will reduce the parameters by using MaxPooling and Dropout
+Input: Number of input parameters, number of filters and the pool size that will be (2,2) always
+Output: The output after the convolutions
 """
 def conv_block(x, n_filters, pool_size=(2, 2)):
     x = Conv2D(n_filters, (3, 3), strides=(1, 1), padding='same')(x)
@@ -196,8 +198,13 @@ def conv_block(x, n_filters, pool_size=(2, 2)):
     x = MaxPooling2D(pool_size=pool_size, strides=pool_size)(x)
     x = Dropout(0.25)(x)
     return x
-# Model Definition
-def create_model(input_shape, num_genres):
+    """
+@description: Method that will create the model ajusted with to the project
+Input: The shape of the training set and the number of genres, in other words, the number of input and the number of output for the classifier
+Output: The model created
+"""
+    def create_model(input_shape, num_genres):
+    #We will create the input and then recurrently call 5 convolutional networks
     inpt = Input(shape=input_shape)
     x = conv_block(inpt, 16)
     x = conv_block(x, 32)
@@ -211,6 +218,7 @@ def create_model(input_shape, num_genres):
     x = Dense(512, activation='relu', 
               kernel_regularizer=tf.keras.regularizers.l2(0.02))(x)
     x = Dropout(0.25)(x)
+    #For the output we will use the function softmax as activation
     predictions = Dense(num_genres, 
                         activation='softmax', 
                         kernel_regularizer=tf.keras.regularizers.l2(0.02))(x)
@@ -220,9 +228,11 @@ def create_model(input_shape, num_genres):
 
 model = create_model(X_train[0].shape, 10)
 print(model.summary())
+# We will compile the model by using the Adam optimizer
 model.compile(loss=tf.keras.losses.categorical_crossentropy,
               optimizer=tf.keras.optimizers.Adam(),
               metrics=['accuracy'])
+# The learning rate will be reduced after some interarions
 reduceLROnPlat = ReduceLROnPlateau(
     monitor='val_loss', 
     factor=0.95,
@@ -233,7 +243,7 @@ reduceLROnPlat = ReduceLROnPlateau(
     cooldown=2,
     min_lr=1e-5
 )
-# Generators
+# We will generate both the training and the test set in order to fit the model, we will also use a bach size of 128 and the number of epochs of 150
 batch_size = 128
 train_generator = GTZANGenerator(X_train, y_train)
 steps_per_epoch = np.ceil(len(X_train)/batch_size)
@@ -248,8 +258,10 @@ hist = model.fit_generator(
     epochs=150,
     verbose=1,
     callbacks=[reduceLROnPlat])
+# We will also evaluate the model so as to check if its working
 score = model.evaluate(X_test, y_test, verbose=0)
 print("val_loss = {:.3f} and val_acc = {:.3f}".format(score[0], score[1]))
+# We will plot how the accuracy and loss changes after each epoch
 plt.figure(figsize=(15,7))
 
 plt.subplot(1,2,1)
@@ -271,6 +283,7 @@ plt.legend()
 plt.tight_layout()
 plt.show()
 #http://scikit-learn.org/stable/auto_examples/model_selection/plot_confusion_matrix.html
+# We will plot the confusion matrxi in order to check how the classifier is working
 def plot_confusion_matrix(cm, classes,
                           normalize=False,
                           title='Confusion matrix',
@@ -322,4 +335,5 @@ scores_songs = [majority_vote(scores) for scores in scores_songs]
 # Same analysis for split
 label = np.split(np.argmax(y_test, axis=1), 300)
 label = [majority_vote(l) for l in label]
-model.save('custom_cnn_2d.h5')
+# We will save the model in an h5 file called Model.h5
+model.save('Model.h5')
