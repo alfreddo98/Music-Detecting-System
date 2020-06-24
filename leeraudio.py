@@ -1,10 +1,12 @@
+# We import the 2 libraries needed
 import pyaudio
 import wave
+# Set the inizialitation parameters
 form_1 = pyaudio.paInt16 # 16-bit resolution
 chans = 1 # 1 channel
 samp_rate = 44100 # 44.1kHz sampling rate
 chunk = 4096 # 2^12 samples for buffer
-record_secs = 20 # seconds to record
+record_secs = 20 # seconds to record (Not too much and not to many)
 #dev_index = 2 # where the device is (in index) (use p.get_device_info_by_index)
 wav_output_filename = 'audio.wav' # name of .wav file
 audio = pyaudio.PyAudio() # create pyaudio instantiation
