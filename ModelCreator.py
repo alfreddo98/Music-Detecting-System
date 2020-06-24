@@ -31,7 +31,9 @@ from tensorflow.keras.callbacks import ReduceLROnPlateau
 # For reproducibility purposes
 np.random.seed(42)
 """
-@description: Method to split a song into multiple songs using overlapping windows
+@description: Method to split a song into multiple songs using overlapping windows this will help at the time of using differect length in time for the songs that will fit the model
+Inputs: The window length (always 0.5), the overlap length (always 0.5), the X signal and the y genre
+Outputs: Array of the new signal and the new array of genres (same as y but more9
 """
 def splitsongs(X, y, window = 0.05, overlap = 0.5):
     # Empty lists to hold our results
@@ -54,10 +56,12 @@ def splitsongs(X, y, window = 0.05, overlap = 0.5):
 
     return np.array(temp_X), np.array(temp_y)
     """
-@description: Method to convert a list of songs to a np array of melspectrograms
+@description: Method to convert a list of songs to a np array of melspectrograms this will be the most important method at the time of obtaining the data we will need to fit the model
+Inputs: Songs in the dataset, the number of fft that will be calculated, the number of samples between successive frames (hop_length)
+Outputs: An array of the melspectrogram values
 """
 def to_melspectrogram(songs, n_fft=1024, hop_length=256):
-    # Transformation function
+    # Transformation function using librosa
     melspec = lambda x: librosa.feature.melspectrogram(x, n_fft=n_fft,
         hop_length=hop_length, n_mels=128)[:,:,np.newaxis]
 
@@ -65,6 +69,11 @@ def to_melspectrogram(songs, n_fft=1024, hop_length=256):
     tsongs = map(melspec, songs)
     # np.array([librosa.power_to_db(s, ref=np.max) for s in list(tsongs)])
     return np.array(list(tsongs))
+    """
+@description: Method that splits the songs given and obtains the melspectrogram of the song
+Inputs: The song X and the genre y
+Outputs: The melspectrogram of the song and the genre of the song
+"""
 def split_convert(X, y):
     arr_specs, arr_genres = [], []
     
@@ -73,18 +82,22 @@ def split_convert(X, y):
         signal, sr = librosa.load(fn)
         signal = signal[:song_samples]
 
-        # Convert to dataset of spectograms/melspectograms
+        # Convert to dataset of melspectograms
         signals, y = splitsongs(signal, genre)
 
         # Convert to "spec" representation
         specs = to_melspectrogram(signals)
 
-        # Save files
+        # Save files into the arrays
         arr_genres.extend(y)
         arr_specs.extend(specs)
     
     return np.array(arr_specs), to_categorical(arr_genres)
-
+    """
+@description: Method to read the songs from the directory dataset and obtain the data we will need, this will include the split of the dataset into test and train set and we will also use the methods developed above 
+Input: The directory of the dataset, the array of the genres (with the position of them), the number of songs
+Output: The train, test data songs and genres
+"""
 def read_data(src_dir, genres, song_samples):    
     # Empty array of dicts with the processed features from all files
     arr_fn = []
@@ -112,16 +125,17 @@ def read_data(src_dir, genres, song_samples):
 
     return X_train, X_test, y_train, y_test
 
-# Parameters
+# We will suppose the dataset is in the same directory as this file is
 gtzan_dir = ''
 song_samples = 660000
+# To know the position in the array of the different genres
 genres = {'metal': 0, 'disco': 1, 'classical': 2, 'hiphop': 3, 'jazz': 4, 
           'country': 5, 'pop': 6, 'blues': 7, 'reggae': 8, 'rock': 9}
 
-# Read the data
+# We read the data with th emethod read_data()
 X_train, X_test, y_train, y_test = read_data(gtzan_dir, genres, song_samples)
 print(X_train.shape, X_test.shape, y_train.shape, y_test.shape)
-# Histogram for train and test 
+# Histogram for train and test, to check if everything is going as wanted
 values, count = np.unique(np.argmax(y_train, axis=1), return_counts=True)
 plt.bar(values, count)
 
@@ -129,17 +143,18 @@ values, count = np.unique(np.argmax(y_test, axis=1), return_counts=True)
 plt.bar(values, count)
 plt.show()
 from tensorflow.keras.utils import Sequence
-
+# We will create the classto manupulate the data gathered so as to fit the model as wanted
 class GTZANGenerator(Sequence):
+    # Initialization
     def __init__(self, X, y, batch_size=64, is_test = False):
         self.X = X
         self.y = y
         self.batch_size = batch_size
         self.is_test = is_test
-    
+    # Obtain the length
     def __len__(self):
         return int(np.ceil(len(self.X)/self.batch_size))
-    
+    # Get the item that we want
     def __getitem__(self, index):
         # Get batch indexes
         signals = self.X[index*self.batch_size:(index+1)*self.batch_size]
@@ -172,6 +187,9 @@ class GTZANGenerator(Sequence):
         self.indexes = np.arange(len(self.X))
         np.random.shuffle(self.indexes)
         return None
+    """
+@description: Method that will help to create the model, it will create a convolutional layer that will be activated with the function ReLU, it will reduce the parameters by using MaxPooling and Dropout
+"""
 def conv_block(x, n_filters, pool_size=(2, 2)):
     x = Conv2D(n_filters, (3, 3), strides=(1, 1), padding='same')(x)
     x = Activation('relu')(x)
