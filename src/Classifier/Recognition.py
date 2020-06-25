@@ -2,7 +2,11 @@ import librosa
 import numpy as np
 import tensorflow as tf
 import argparse
-
+    """
+@description: Method to convert a list of songs to a np array of melspectrograms this will be the most important method at the time of obtaining the data we will need to fit the model
+Inputs: Songs in the dataset, the number of fft that will be calculated, the number of samples between successive frames (hop_length)
+Outputs: An array of the melspectrogram values
+"""
 def to_melspectrogram(songs, n_fft=1024, hop_length=256):
     # Transformation function
     melspec = lambda x: librosa.feature.melspectrogram(x, n_fft=n_fft,
@@ -13,7 +17,11 @@ def to_melspectrogram(songs, n_fft=1024, hop_length=256):
     # np.array([librosa.power_to_db(s, ref=np.max) for s in list(tsongs)])
     #print(np.array(list(tsongs)))
     return np.array(list(tsongs))
-
+    """
+@description: Method to split a song into multiple songs using overlapping windows this will help at the time of using differect length in time for the songs that will fit the model
+Inputs: The window length (always 0.5), the overlap length (always 0.5), the X signal and the y genre
+Outputs: Array of the new signal and the new array of genres (same as y but more9
+"""
 def splitsongs(X, overlap=0.5):
     # Empty lists to hold our results
     temp_X = []
@@ -32,7 +40,11 @@ def splitsongs(X, overlap=0.5):
         temp_X.append(s)
 
     return np.array(temp_X)
-
+    """
+@description: Method to call the other methods to split songs and obtaining the melspectrogram of the song recorded
+Inputs: The song file .WAV
+Outputs: The melspectrogram of the song
+"""
 def make_dataset_dl(song):
     # Convert to spectrograms and split into small windows
     signal, sr = librosa.load(song, sr=None)
@@ -44,14 +56,22 @@ def make_dataset_dl(song):
     specs = to_melspectrogram(signals)
 
     return specs
-
+    """
+@description: Method to map the genres with a value of the map, for example, giving 1 mapping it to genre classical
+Inputs: The number or key and the directory of genres, it will be declared in the main
+Outputs: The genre
+"""
 def get_genres(key, dict_genres):
     # Transforming data to help on transformation
     labels = []
     tmp_genre = {v:k for k,v in dict_genres.items()}
 
     return tmp_genre[key]
-
+    """
+@description: Method to return the genre given the classifier output
+Inputs: The scores of the classifier output and the directory of genres, it will be declared in the main
+Outputs: The genre clasiffied and the probability of each other
+"""
 def majority_voting(scores, dict_genres):
     preds = np.argmax(scores, axis = 1)
     values, counts = np.unique(preds, return_counts=True)
@@ -61,14 +81,14 @@ def majority_voting(scores, dict_genres):
     return [(get_genres(x, dict_genres), prob) for x, prob in votes.items()]
 
 if __name__ == '__main__':
-    # Parse command line arguments
+    # We will decide to introduce the model and the audio file by command line or by default
     parser = argparse.ArgumentParser(description='Music Genre Recognition')
     parser.add_argument('-m', '--model', type=str, required=False)
     parser.add_argument('-s', '--song', type=str, required=False)
     args = parser.parse_args()
     if (args.model == None or args.song==None):
-        song = 'audio.wav'
-        model_file='custom_cnn_2d.h5'
+        song = '../../data/samples/Count.wav'
+        model_file='../../data/Model.h5'
     else:
         song = args.song
         model_file=args.model

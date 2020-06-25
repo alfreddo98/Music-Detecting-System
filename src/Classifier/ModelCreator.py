@@ -30,7 +30,7 @@ from tensorflow.keras.callbacks import ReduceLROnPlateau
 
 # For reproducibility purposes
 np.random.seed(42)
-"""
+    """
 @description: Method to split a song into multiple songs using overlapping windows this will help at the time of using differect length in time for the songs that will fit the model
 Inputs: The window length (always 0.5), the overlap length (always 0.5), the X signal and the y genre
 Outputs: Array of the new signal and the new array of genres (same as y but more9
@@ -336,4 +336,4 @@ scores_songs = [majority_vote(scores) for scores in scores_songs]
 label = np.split(np.argmax(y_test, axis=1), 300)
 label = [majority_vote(l) for l in label]
 # We will save the model in an h5 file called Model.h5
-model.save('Model.h5')
+model.save('../../data/Model.h5')
