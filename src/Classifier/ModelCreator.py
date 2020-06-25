@@ -1,3 +1,9 @@
+"""
+Author: Alfredo Sánchez Sánchez
+Date: 25/06/2020
+Project name: Music Detecting System (TFG)
+Description: Final Degree Proyect Final project for the Telecomunication degree in ICAI Comillas, in Madrid (Spain) It consists on a system installed in raspbian using Unicorn Hat a 8x8 WS2812B RGB leds, the leds will shine at the same rithm and compass as the music that is sounding and will also detect the genre of the music that is being sounded. 
+"""
 #Importing all the libraries we need
 import os
 import h5py
